@@ -159,6 +159,20 @@ public:
             std::cout << "Траты на указанную дату отсутствуют." << std::endl;
         }
     }
+    void showSpendingsForPeriod(const std::string& startDate, const std::string& endDate) const {
+        std::cout << "Траты за период с " << startDate << " по " << endDate << ":" << std::endl;
+        bool foundSpendings = false; // Флаг для отслеживания наличия трат за период
+        for (const Spending& s : spendings) {
+            if (s.getDate() >= startDate && s.getDate() <= endDate) {
+                s.show();
+                foundSpendings = true; // Устанавливаем флаг, если найдены траты
+            }
+        }
+
+        if (!foundSpendings) {
+            std::cout << "Траты в указанный период отсутствуют." << std::endl;
+        }
+    }
     void addSpending(SpendingCategory category, double amount, const std::string& date) override {
         Spending spending(category, amount, date);
         spendings.insert(spending);
@@ -285,10 +299,10 @@ int main() {
       // cardSpendingManager.generateCategoryReport();
       // cardAccount.show();
 
-      // std::string specificDate = "2023-09-3";
-    //   cardSpendingManager.showSpendingsForDate(specificDate);
+       std::string specificDate1 = "2023-09-3";
+       cardSpendingManager.showSpendingsForDate(specificDate1);
+       std::string specificDate2= "2023-09-8";
 
+       cardSpendingManager.showSpendingsForPeriod(specificDate1, specificDate2);
         return 0;
     }
-//добавить отчеты и статистику:
-// код, который собирает статистику или создает отчеты на основе категорий расходов
