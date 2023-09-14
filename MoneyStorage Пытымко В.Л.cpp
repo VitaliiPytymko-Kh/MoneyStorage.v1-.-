@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <algorithm>
+#include <fstream>
 
 class financeacount {
 public:
@@ -145,7 +146,98 @@ public:
 class SpendingManager : public ISpendingManager {
 public:
     SpendingManager(financeacount& account) : account(account) {}
-    
+
+    // Метод для сохранения трат за указанный период в файл
+    void SaveSpendingsForPeriod(const std::string& startDate, const std::string& endDate, const std::string& filename) const {
+        std::ofstream outputFile(filename); // Открываем файл для записи
+
+        if (!outputFile.is_open()) {
+            std::cerr << "Ошибка открытия файла для записи." << std::endl;
+            return;
+        }
+
+        outputFile << "Траты за период с " << startDate << " по " << endDate << ":" << std::endl;
+        bool foundSpendings = false; // Флаг для отслеживания наличия трат за период
+        for (const Spending& s : spendings) {
+            if (s.getDate() >= startDate && s.getDate() <= endDate) {
+                // Вместо вывода на консоль, записываем в файл
+                outputFile << "Category: " << GetCategoryString(s.getCategory()) << ", Amount: " << s.getAmount() << ", Date: " << s.getDate() << std::endl;
+                foundSpendings = true; // Устанавливаем флаг, если найдены траты
+            }
+        }
+
+        if (!foundSpendings) {
+            outputFile << "Траты в указанный период отсутствуют." << std::endl;
+        }
+
+        outputFile.close(); // Закрываем файл после записи
+        std::cout<< "Отчет сохранен в файл : "<< filename<< std::endl;
+    }
+
+    // Вспомогательная функция для получения строкового представления категории
+    std::string GetCategoryString(SpendingCategory category) const {
+        std::string categoryStr;
+        switch (category) {
+        case Food:
+            categoryStr = "Food";
+            break;
+        case Entertainment:
+            categoryStr = "Entertainment";
+            break;
+        case Transportation:
+            categoryStr = "Transportation";
+            break;
+        case Other:
+            categoryStr = "Other";
+            break;
+        }
+        return categoryStr;
+    }
+
+
+    void showTop3CategorySpendings(const std::string& startDate, const std::string& endDate) const {
+        std::map<SpendingCategory, double> categorySpending; // Словарь для хранения сумм трат по категориям
+
+        // Вычисляем суммы трат для каждой категории за указанный период
+        for (const Spending& s : spendings) {
+            if (s.getDate() >= startDate && s.getDate() <= endDate) {
+                categorySpending[s.getCategory()] += s.getAmount();
+            }
+        }
+
+        // Создаем вектор пар (категория, сумма) и сортируем его в порядке убывания сумм
+        std::vector<std::pair<SpendingCategory, double>> sortedCategorySpending(categorySpending.begin(), categorySpending.end());
+        std::sort(sortedCategorySpending.begin(), sortedCategorySpending.end(),
+            [](const std::pair<SpendingCategory, double>& a, const std::pair<SpendingCategory, double>& b) {
+                return a.second > b.second;
+            });
+
+        // Выводим топ-3 категории с суммами
+        std::cout << "Топ-3 категории трат за период с " << startDate << " по " << endDate << ":" << std::endl;
+        for (size_t i = 0; i < std::min(sortedCategorySpending.size(), 3u); ++i) {
+            const SpendingCategory& category = sortedCategorySpending[i].first;
+            const double amount = sortedCategorySpending[i].second;
+
+            std::string categoryStr;
+            switch (category) {
+            case Food:
+                categoryStr = "Food";
+                break;
+            case Entertainment:
+                categoryStr = "Entertainment";
+                break;
+            case Transportation:
+                categoryStr = "Transportation";
+                break;
+            case Other:
+                categoryStr = "Other";
+                break;
+            }
+
+            std::cout << "Category: " << categoryStr << ", Total Amount: " << amount << std::endl;
+        }
+    }
+
     std::vector<Spending> getTopSpending(const std::string& startDate, const std::string& endDate) const {
         std::vector<Spending> topSpendings;
 
@@ -300,6 +392,8 @@ int main() {
         // Создаем менеджер расходов для карты
         SpendingManager cardSpendingManager(cardAccount);
 
+       
+
         // Задаем начальную случайную зерновую последовательность
         std::srand(static_cast<unsigned>(std::time(nullptr)));
 
@@ -325,14 +419,14 @@ int main() {
         }
 
         // Показываем все расходы
-       // cardSpendingManager.showAllSpendings();
+        cardSpendingManager.showAllSpendings();
 
-        // Показываем статистику по категориям
-       //cardSpendingManager.showCategoryStatistics();
+       //  Показываем статистику по категориям
+       cardSpendingManager.showCategoryStatistics();
 
         // Генерируем отчет о расходах по категориям
-      // cardSpendingManager.generateCategoryReport();
-      // cardAccount.show();
+      cardSpendingManager.generateCategoryReport();
+       cardAccount.show();
 
        std::string specificDate1 = "2023-09-2";
        //cardSpendingManager.showSpendingsForDate(specificDate1);
@@ -344,6 +438,13 @@ int main() {
        std::string startDate = "2023-09-2";
        std::string endDate = "2023-09-5";
        cardSpendingManager.showTop3Spendings(startDate, endDate);
+       cardSpendingManager.showTop3CategorySpendings(startDate, endDate);
+       std::string filename = "spendings_forPeriod_report.txt";
+       // Сохраните отчет в файл
+       cardSpendingManager.SaveSpendingsForPeriod(startDate, endDate, filename);
 
+       
+
+       
         return 0;
     }

@@ -1,0 +1,6 @@
+Траты за период с 2023-09-2 по 2023-09-5:
+Category: Food, Amount: 64, Date: 2023-09-3
+Category: Entertainment, Amount: 17, Date: 2023-09-3
+Category: Entertainment, Amount: 22, Date: 2023-09-2
+Category: Entertainment, Amount: 80, Date: 2023-09-3
+Category: Other, Amount: 98, Date: 2023-09-3
