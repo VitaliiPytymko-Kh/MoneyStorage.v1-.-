@@ -2,11 +2,13 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <map>
+#include <cstdlib>
+#include <ctime>
 
 class financeacount {
 public:
     financeacount(const std::string& name, double balance) : name(name), balance(balance) {}
-
     virtual void show() const = 0;
     virtual void addbalance(double amount) = 0;
     virtual void withdraw(double amount) = 0;
@@ -135,6 +137,7 @@ public:
     virtual void addSpending(SpendingCategory category, double amount, const std::string& date) = 0;
     virtual void showAllSpendings() const = 0;
     virtual double getTotalSpending(SpendingCategory category) const = 0;
+    
 };
 
 // Реализация управления тратами
@@ -142,10 +145,27 @@ class SpendingManager : public ISpendingManager {
 public:
     SpendingManager(financeacount& account) : account(account) {}
 
+    void showSpendingsForDate(const std::string& date) const {
+        std::cout << "Траты для даты " << date << ":" << std::endl;
+        bool foundSpendings = false; // Флаг для отслеживания наличия трат за дату
+        for (const Spending& s : spendings) {
+            if (s.getDate() == date) {
+                s.show();
+                foundSpendings = true; // Устанавливаем флаг, если найдены траты
+            }
+        }
+
+        if (!foundSpendings) {
+            std::cout << "Траты на указанную дату отсутствуют." << std::endl;
+        }
+    }
     void addSpending(SpendingCategory category, double amount, const std::string& date) override {
         Spending spending(category, amount, date);
         spendings.insert(spending);
-        account.withdraw(amount); // Управление тратами через снятие денег с аккаунта
+        account.withdraw(amount);
+
+        // Update category statistics
+        categoryStatistics[category] += amount;
     }
 
     void showAllSpendings() const override {
@@ -163,32 +183,112 @@ public:
         }
         return total;
     }
+   
+    void showCategoryStatistics() const {
+        std::cout << "Category Statistics:" << std::endl;
+        for (const auto& pair : categoryStatistics) {
+            SpendingCategory category = pair.first;
+            double totalAmount = pair.second;
+
+            std::string categoryStr;
+            switch (category) {
+            case Food:
+                categoryStr = "Food";
+                break;
+            case Entertainment:
+                categoryStr = "Entertainment";
+                break;
+            case Transportation:
+                categoryStr = "Transportation";
+                break;
+            case Other:
+                categoryStr = "Other";
+                break;
+            }
+
+            std::cout << "Category: " << categoryStr << ", Total Amount: " << totalAmount << std::endl;
+        }
+    }
+    void generateCategoryReport() const {
+        std::cout << "Spending Report by Category:" << std::endl;
+        for (const auto& pair : categoryStatistics) {
+            SpendingCategory category = pair.first;
+            double totalAmount = pair.second;
+
+            std::cout << "Category: ";
+            switch (category) {
+            case Food:
+                std::cout << "Food";
+                break;
+            case Entertainment:
+                std::cout << "Entertainment";
+                break;
+            case Transportation:
+                std::cout << "Transportation";
+                break;
+            case Other:
+                std::cout << "Other";
+                break;
+            }
+
+            std::cout << ", Total Amount: " << totalAmount << std::endl;
+        }
+    }
 
 private:
     financeacount& account;
     std::multiset<Spending> spendings;
+    std::map<SpendingCategory, double> categoryStatistics;
 };
 
 int main() {
-    Card c1("Visa", 1000.0);
-    c1.show();
+   
+    setlocale(LC_ALL,"");
+        // Создаем карту с начальным балансом в $1000
+        Card cardAccount("Карта Джона", 100000.0);
+        cardAccount.show();
 
-    Wallet w1("My Wallet", 2000.0);
-    w1.show();
+        // Создаем менеджер расходов для карты
+        SpendingManager cardSpendingManager(cardAccount);
 
-    SpendingManager cardSpendingManager(c1);
-    SpendingManager walletSpendingManager(w1);
+        // Задаем начальную случайную зерновую последовательность
+        std::srand(static_cast<unsigned>(std::time(nullptr)));
 
-    cardSpendingManager.addSpending(Food, 50.0, "09.09.23");
-    cardSpendingManager.addSpending(Entertainment, 30.0, "09.09.23");
+        // Создаем массив дней и генерируем траты в каждый день
+        const int numDays = 10;
+        for (int day = 1; day <= numDays; ++day) {
+           
+            const int numSpendings = std::rand() % 6; // Случайное количество трат (от 0 до 5)
 
-    walletSpendingManager.addSpending(Food, 70.0, "09.09.23");
-    walletSpendingManager.addSpending(Entertainment, 40.0, "09.09.23");
+            for (int spending = 0; spending < numSpendings; ++spending) {
+                // Случайно выбираем категорию траты (от 0 до 3)
+                SpendingCategory category = static_cast<SpendingCategory>(std::rand() % 4);
 
-    cardSpendingManager.showAllSpendings();
-    walletSpendingManager.showAllSpendings();
+                // Генерируем случайную сумму траты (от 10 до 100)
+                double amount = 10.0 + (std::rand() % 91);
 
-    c1.show();
-    w1.show();
-    return 0;
-}
+                // Генерируем случайную дату (просто номер дня)
+                std::string date = "2023-09-" + std::to_string(day);
+
+                // Добавляем трату в менеджер расходов
+                cardSpendingManager.addSpending(category, amount, date);
+            }
+        }
+
+        // Показываем все расходы
+       // cardSpendingManager.showAllSpendings();
+
+        // Показываем статистику по категориям
+       //cardSpendingManager.showCategoryStatistics();
+
+        // Генерируем отчет о расходах по категориям
+      // cardSpendingManager.generateCategoryReport();
+      // cardAccount.show();
+
+      // std::string specificDate = "2023-09-3";
+    //   cardSpendingManager.showSpendingsForDate(specificDate);
+
+        return 0;
+    }
+//добавить отчеты и статистику:
+// код, который собирает статистику или создает отчеты на основе категорий расходов
