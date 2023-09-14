@@ -5,6 +5,7 @@
 #include <map>
 #include <cstdlib>
 #include <ctime>
+#include <algorithm>
 
 class financeacount {
 public:
@@ -144,6 +145,40 @@ public:
 class SpendingManager : public ISpendingManager {
 public:
     SpendingManager(financeacount& account) : account(account) {}
+    
+    std::vector<Spending> getTopSpending(const std::string& startDate, const std::string& endDate) const {
+        std::vector<Spending> topSpendings;
+
+        // Создаем вектор и фильтруем траты для указанного периода
+        std::vector<Spending> spendingsForPeriod;
+        for (const Spending& s : spendings) {
+            if (s.getDate() >= startDate && s.getDate() <= endDate) {
+                spendingsForPeriod.push_back(s);
+            }
+        }
+
+        // Сортируем траты для указанного периода по убыванию суммы
+        std::sort(spendingsForPeriod.begin(), spendingsForPeriod.end(),
+            [](const Spending& a, const Spending& b) {
+                return a.getAmount() > b.getAmount();
+            });
+
+        // Находим топ-3 траты по максимальным суммам
+        for (size_t i = 0; i < std::min(spendingsForPeriod.size(), 3u); ++i) {
+            topSpendings.push_back(spendingsForPeriod[i]);
+        }
+
+        return topSpendings;
+    }
+
+    // Метод для вывода топ-3 трат за указанный период
+    void showTop3Spendings(const std::string& startDate, const std::string& endDate) const {
+        std::vector<Spending> topSpendings = getTopSpending(startDate, endDate);
+        std::cout << "Топ-3 траты за период с " << startDate << " по " << endDate << ":" << std::endl;
+        for (const Spending& s : topSpendings) {
+            s.show();
+        }
+    }
 
     void showSpendingsForDate(const std::string& date) const {
         std::cout << "Траты для даты " << date << ":" << std::endl;
@@ -299,10 +334,16 @@ int main() {
       // cardSpendingManager.generateCategoryReport();
       // cardAccount.show();
 
-       std::string specificDate1 = "2023-09-3";
-       cardSpendingManager.showSpendingsForDate(specificDate1);
-       std::string specificDate2= "2023-09-8";
+       std::string specificDate1 = "2023-09-2";
+       //cardSpendingManager.showSpendingsForDate(specificDate1);
+       std::string specificDate2= "2023-09-5";
 
        cardSpendingManager.showSpendingsForPeriod(specificDate1, specificDate2);
+
+       // Получить топ-3 трат за период с 2023-09-02 по 2023-09-05
+       std::string startDate = "2023-09-2";
+       std::string endDate = "2023-09-5";
+       cardSpendingManager.showTop3Spendings(startDate, endDate);
+
         return 0;
     }
